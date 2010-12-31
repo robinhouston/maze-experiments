@@ -2,13 +2,14 @@
 <html>
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <meta name="viewport" content="width=550" />
+    <meta name="viewport" content="width=800" />
     <title>Maze race</title>
     <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.4.4/jquery.min.js"></script>
     <script type="text/javascript">
       var maze_race = function() {
         var P_HORIZ = 1/2; // Probability of joining two horizontally-adjacent cells
         var P_VERT = 2/3; // Probability of joining two vertically-adjacent cells
+        var TOTAL_SECONDS = 60 * 5;
         
         var DEBUG = {
           "maze": false,
@@ -21,6 +22,8 @@
         var cell_width = 100;
         var cell_height = 100;
         var num_completed = 0;
+        var interval_timer;
+        var start_time;
         
         var log = function(logging_type) {
           if (DEBUG[logging_type] && typeof console == "object") {
@@ -157,8 +160,10 @@
           };
         }();
         
+        var finito = false;
         var next_maze = function() {
           log("flow", "next maze");
+          if (finito) return;
           var cell_size;
           if (num_completed < 5) {
             cell_size = 100;
@@ -174,22 +179,35 @@
           }
           cell_width = cell_height = cell_size;
           num_rows = num_cols = 500 / cell_size;
-          num_completed++;
+          $("#num-completed").text(++num_completed);
           
           maze_maker.generate();
           $("#maze-container").append("<div id='new-maze'></div>");
           maze_maker.render($("#new-maze"));
           setTimeout(function() {
+            $("#maze-container").removeClass("instant").addClass("flipped");
+          }, 0);
+          setTimeout(function() {
+            if (finito) return;
             $("#maze").remove();
             $("#new-maze").attr("id", "maze");
             $("#maze-container").addClass("instant").removeClass("flipped");
             start_interact($("#maze"));
           }, 1000);
-          $("#maze-container").removeClass("instant").addClass("flipped");
+        };
+        
+        var time_out = function() {
+          finito = true;
+          setTimeout(function() {
+            $("#maze, #new-maze").remove();
+          }, 1000);
+          $("#time-out").show();
+          setTimeout(function() {
+            $("#maze-container").removeClass("instant").addClass("flipped");
+          }, 0);
         };
           
         var start_interact = function(maze) {
-          var started = false;
           var done = false;
           var row = 0;
           var col = 0;
@@ -253,7 +271,10 @@
           };
           
           var append_or_backtrack = function(f, r, c) {
-            started = true;
+            if (typeof start_time == "undefined") {
+              // Start the counter, if it hasn't already started
+              start_time = new Date();
+            }
             if (path.length > 1
                 && row == path[path.length - 2][0]
                 && col == path[path.length - 2][1])
@@ -438,6 +459,29 @@
                 return false;
               }
             });
+          
+          if (interval_timer) {
+            clearInterval(interval_timer);
+          }
+          interval_timer = setInterval(function() {
+            if (!start_time) {
+              return;
+            }
+            var elapsed_millis = new Date() - start_time;
+            var elapsed_seconds = Math.floor(elapsed_millis / 1000);
+            var remaining_seconds = TOTAL_SECONDS - elapsed_seconds;
+            if (remaining_seconds < 1) {
+              clearInterval(interval_timer);
+              start_time = null;
+              time_out();
+            }
+            var remaining_minutes = Math.floor(remaining_seconds / 60);
+            var residual_seconds = "" + (remaining_seconds % 60);
+            if (residual_seconds.length < 2) {
+              residual_seconds = "0" + residual_seconds;
+            }
+            $("#time").text(remaining_minutes + ":" + residual_seconds);
+          }, 500);
         };
         
         /* Kick the whole thing off! */
@@ -461,14 +505,15 @@
       
       /* the maze itself */
       #maze-container { position: relative; float: left; width: 502px; height: 502px; }
-      #maze { position: absolute; width: 500px; height: 500px; top: 1px; left: 0; background: #3F576D; border: 1px solid white; }
-      #new-maze { position: absolute;  width: 500px; height: 500px; top: 1px; left: 0; background: #3F576D; border: 1px solid white; }
-      .row { width: 500px; height: 20px; }
-      .cell { display: inline-block; float: left; position: relative; border: 0px solid #BED6EC; padding: 1px; text-align: center; font-size: 8px; vertical-align: top; line-height: 18px; }
-      .cell.s100 { width: 98px; height: 98px; }
-      .cell.s50 { width: 48px; height: 48px; }
-      .cell.s25 { width: 23px; height: 23px; }
-      .cell.s20 { width: 18px; height: 18px; }
+      #maze-container #maze { position: absolute; width: 500px; height: 500px; background: #3F576D; border: 1px solid white; }
+      #maze-container #new-maze { display: none; position: absolute;  width: 500px; height: 500px; background: #3F576D; border: 1px solid white; }
+      #maze-container #time-out { display: none; position: absolute; }
+      .row { width: 500px; }
+      .cell { display: inline-block; float: left; position: relative; border: 0px solid #BED6EC; padding: 1px; text-align: center; font-size: 8px; vertical-align: top; }
+      .cell.s100 { width: 98px; height: 98px; line-height: 98px; }
+      .cell.s50 { width: 48px; height: 48px; line-height: 48px; }
+      .cell.s25 { width: 23px; height: 23px; line-height: 23px; }
+      .cell.s20 { width: 18px; height: 18px; line-height: 18px; }
       .cell.t { border-top-width: 1px; padding-top: 0; }
       .cell.r { border-right-width: 1px; padding-right: 0; }
       .cell.b { border-bottom-width: 1px; padding-bottom: 0; }
@@ -477,16 +522,30 @@
       /* 3D transition effect */
       @media all and (-webkit-transform-3d) {
         #container { -webkit-perspective: 500px; }
-        #maze-container { -webkit-transition: 1s; -webkit-transform-style: preserves-3d; -webkit-transform: rotateY(0deg); }
-        #maze-container.flipped { -webkit-transform: rotateY(180deg); }
-        #maze-container.instant { -webkit-transition: 0; }
-        #maze, #maze div { -webkit-backface-visibility: hidden; }
-        #new-maze { -webkit-transform: rotateY(180deg); display: block; }
+        #maze-container #maze,
+        #maze-container #new-maze,
+        #maze-container #time-out { -webkit-transition: 1s; -webkit-transform-style: preserves-3d; }
+        #maze-container #maze { -webkit-transform: rotateY(0deg); }
+        #maze-container #new-maze,
+        #maze-container #time-out { -webkit-transform: rotateY(180deg); }
+        #maze-container #new-maze { display: block; }
+        #maze-container.instant #maze,
+        #maze-container.instant #new-maze,
+        #maze-container.instant #time-out { -webkit-transition: 0; }
+        #maze-container.flipped #maze { -webkit-transform: rotateY(180deg); }
+        #maze-container.flipped #new-maze,
+        #maze-container.flipped #time-out  { -webkit-transform: rotateY(360deg); }
+        #maze,
+        #maze div,
+        #maze-container #new-maze,
+        #maze-container #new-maze div,
+        #maze-container #time-out,
+        #maze-container #time-out * { -webkit-backface-visibility: hidden; }
       }
       
       /* entrance and exit */
       #r0c0 { border-left-width: 2px; margin-left: -1px; border-left-color: #3F576D; }
-      .exit.cell { border-right-width: 2px; margin-right: -1px; border-right-color: #3F576D; }
+      .cell.exit { margin-right: -1px; border-right-width: 2px; border-right-color: #3F576D; }
       
       /* path through the maze */
       .path-segment { background: red; position: absolute; font-size: 1px; }
@@ -497,18 +556,34 @@
       #status { width: 290px; float: right; }
       #status #timer { width: 250px; border: 3px solid #999; padding: 6px 6px; -webkit-border-radius: 10px 10px; margin: auto; text-align: center; }
       #status #timer #time { font-size: 48px; line-height: 50px; }
-
+      #status #completed { width: 250px; margin: auto; text-align: center; margin-top: 50px; }
+      #status #completed #num-completed { font-size: 48px; line-height: 50px; }
+      
+      /* Time out */
+      #time-out { padding: 40px; width: 420px; height: 420px; background: black; border: 2px dotted #900; }
+      #time-out h1 { text-align: center; }
+      
       /* footer */
       #footer { font-size: 12px; width: 100%; clear: both; padding-top: 1em; text-align: center; color: #DDD; }
     </style>
   </head>
   <body>
     <div id="container">
-      <div id="maze-container"><div id="maze"></div></div>
+      <div id="maze-container">
+        <div id="maze"></div>
+        <div id="time-out">
+          <h1>Time out!</h1>
+          <p>Reload the page to play again.</p>
+        </div>
+      </div>
       <div id="status">
         <div id="timer">
           <div>Time remaining</div>
           <div id="time">5:00</div>
+        </div>
+        <div id="completed">
+          <div>Solved mazes</div>
+          <div id="num-completed">0</div>
         </div>
       </div>
       <div id="footer">
