@@ -480,6 +480,10 @@
             if (residual_seconds.length < 2) {
               residual_seconds = "0" + residual_seconds;
             }
+            if (remaining_seconds <= 0) {
+              remaining_minutes = "0";
+              residual_seconds = "00";
+            }
             $("#time").text(remaining_minutes + ":" + residual_seconds);
           }, 500);
         };
