@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=800" />
+    <title>Flipper</title>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.4.4/jquery.min.js"></script>
+    <script type="text/javascript">
+      $(function() {
+        $("#flip").click(function() {
+          $(".card").toggleClass("flipped");
+        });
+      });
+    </script>
+    <style type="text/css">
+      body { -webkit-perspective: 500px; background: black; font-family: "Lucida Grande", "Lucida Sans", sans-serif; font-size: 60px; font-weight: bold; }
+      #examples { height: 350px; width: 800px; position: relative; }
+      #examples #example-1 { position: absolute; left: 50px; }
+      #examples .blurb { position: absolute; text-align: center; height: 40px; color: white; font-size: 14px; padding-top: 20px; }
+      #examples #example-1-blurb { left: 50px; top: 300px; width: 300px; }
+      #examples #example-2-blurb { right: 50px; top: 300px; width: 300px; }
+      #examples #example-2 { position: absolute; right: 50px; }
+      .card { width: 300px; height: 300px; margin: auto; text-align: center; position: relative; }
+      .card .face { background: white; border: 3px solid #666; }
+      .card .front { position: absolute; width: 300px; height: 300px; }
+      .card .back { position: absolute; width: 300px; height: 300px; display: none; }
+      .card.flipped .front { display: none; }
+      .card.flipped .back { display: block; }
+      #controls { text-align: center; width: 800px; }
+      
+      @media all and (-webkit-transform-3d) {
+        .card .face { -webkit-box-sizing: border-box; }
+        .card.flipped .front { display: block; }
+        .card .back { display: block; -webkit-transform: rotateY(180deg); }
+        
+        #example-1 { -webkit-transition: 2s; -webkit-transform-style: preserves-3d; -webkit-transform: rotateY(0deg); -webkit-box-sizing: border-box; }
+        #example-1 .front { -webkit-backface-visibility: hidden; }
+        #example-1.flipped { -webkit-transform: rotateY(180deg); }
+        
+        #example-2 .face { -webkit-transition: 2s; -webkit-transform-style: preserves-3d; -webkit-backface-visibility: hidden; }
+        #example-2 .front { -webkit-transform: rotateY(0deg); }
+        #example-2.flipped .front { -webkit-transform: rotateY(180deg); }
+        #example-2.flipped .back { -webkit-transform: rotateY(360deg); }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="examples">
+      <div id="example-1" class="card">
+        <div class="front face">
+          This is the front of the card.
+        </div>
+        <div class="back face">
+          This is the back of the card.
+        </div>
+      </div>
+      <div class="blurb" id="example-1-blurb">
+        Flipping the whole card works on desktop Safari,
+        but not on mobile.
+      </div>
+      <div id="example-2" class="card">
+        <div class="front face">
+          This is the front of the card.
+        </div>
+        <div class="back face">
+          This is the back of the card.
+        </div>
+      </div>
+      <div class="blurb" id="example-2-blurb">
+        Flipping both faces separately works on both.
+      </div>
+    </div>
+    <div id="controls">
+      <button id="flip">Flip</button>
+    </div>
+  </body>
+</html>
