@@ -3,7 +3,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta name="viewport" content="width=800" />
-    <title>Maze race</title>
+    <title>Maze race (Kruskal&rsquo;s algorithm)</title>
     <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.4.4/jquery.min.js"></script>
     <script type="text/javascript">
       var maze_race = function() {
@@ -53,83 +53,64 @@
         };
         
         var maze_maker = function() {
-          var hbars_by_col;
-          var vbars_by_row;
-          var set_by_cell; // for debugging purposes
+          var set_by_cell;
+          var connection_below;
+          var connection_to_right;
           
           return {
             /* Generate a new maze */
             "generate": function() {
               log("flow", "generating maze");
               var row, col;
-            
-              hbars_by_col = make_2d_array(num_cols, num_rows + 1, true);
-              vbars_by_row = make_2d_array(num_rows, num_cols + 1, true);
-              set_by_cell = make_2d_array(num_rows, num_cols, "");
-            
-              var set_by_col = {};
-              var cols_by_set = {};
-              for (col = 0; col < num_cols; col++) {
-                set_by_col[col] = col;
-                cols_by_set[col] = [col];
+              
+              connection_below = make_2d_array(num_rows - 1, num_cols, false);
+              connection_to_right = make_2d_array(num_rows, num_cols - 1, false);
+              
+              set_by_cell = [];
+              var cells_by_set = {};
+              for (var i = 0; i < num_rows; i++) {
+                var a = [];
+                for (var j = 0; j < num_cols; j++) {
+                  a.push(i * num_rows + j);
+                  cells_by_set[i * num_rows + j] = [[i, j]];
+                }
+                set_by_cell.push(a);
               }
-              var next_set_index = num_cols;
-            
-              for (row = 0; row < num_rows; row++) {
               
-                if (row > 0) {
-                  $.each(keys(cols_by_set), function(i, set) {
-                    var cols = cols_by_set[set];
-                    var num_to_join = P_VERT * cols.length;
-                    if (num_to_join < 1) {
-                      num_to_join = 1; // At least one cell in each set must be joined
-                    }
-                    log("maze", "[row %d, set %s = [%s]]", row, set, cols.join(", "));
-                    var size_of_set = cols.length;
-                    $.each($.merge([], cols), function(j, col) {
-                      log("maze", "  %d remaining; must join %d", size_of_set - j, num_to_join);
-                      if (Math.random() * (size_of_set - j) <= num_to_join) {
-                        // Join (row-1, col) with (row, col)
-                      
-                        log("maze", "[row %d, set %s] Joining col %d for [%s]", row, set, col, cols.join(", "));
-                        num_to_join--;
-                        hbars_by_col[col][row] = false;
-                      } else {
-                        cols.splice($.inArray(col, cols), 1);
-                        cols_by_set[next_set_index] = [col];
-                        set_by_col[col] = next_set_index;
-                        next_set_index++;
-                      }
-                    });
-                  });
+              var number_of_sets = num_rows * num_cols;
+              
+              var combine_sets = function(set_1, set_2) {
+                if (set_1 == set_2) {
+                  return false;
                 }
+                for (i = 0; i < cells_by_set[set_2].length; i++) {
+                  var c = cells_by_set[set_2][i];
+                  set_by_cell[c[0]][c[1]] = set_1;
+                }
+                $.merge(cells_by_set[set_1], cells_by_set[set_2]);
+                number_of_sets--;
+                return true;
+              };
               
-                for (col = 0; col < num_cols; col++) {
-                  if (col + 1 < num_cols && set_by_col[col] != set_by_col[col+1]) {
-                    // Consider joining the two cells (row, col) and (row, col + 1)
-                    if (row == num_rows - 1 || Math.random() < P_HORIZ) {
-                      // Join them
-                      vbars_by_row[row][col+1] = false;
-                      var set_1 = set_by_col[col];
-                      var set_2 = set_by_col[col + 1];
-                      $.each(cols_by_set[set_2], function(i, col) {
-                        set_by_col[col] = set_1;
-                      });
-                      $.merge(cols_by_set[set_1], cols_by_set[set_2]);
-                      delete cols_by_set[set_2];
-                    }
+              while (number_of_sets > 1) {
+                var selected_c, selected_r, set_1, set_2;
+                if (Math.random() > 1/2) {
+                  selected_r = Math.floor(Math.random() * (num_rows - 1));
+                  selected_c = Math.floor(Math.random() * num_cols);
+                  if (combine_sets(set_by_cell[selected_r][selected_c], set_by_cell[selected_r + 1][selected_c])) {
+                    connection_below[selected_r][selected_c] = true;
                   }
                 }
-              
-                if (DEBUG.maze) {
-                  for (col = 0; col < num_cols; col++) {
-                    set_by_cell[row][col] = set_by_col[col];
+                else {
+                  selected_r = Math.floor(Math.random() * num_rows);
+                  selected_c = Math.floor(Math.random() * (num_cols - 1));
+                  if (combine_sets(set_by_cell[selected_r][selected_c], set_by_cell[selected_r][selected_c + 1])) {
+                    connection_to_right[selected_r][selected_c] = true;
                   }
                 }
-              
               }
             },
-          
+            
             /* Render the maze to a container element */
             "render": function(maze) {
               log("flow", "rendering maze");
@@ -139,19 +120,19 @@
                 var maze_row = $("<div class='row'></div>");
                  for (col = 0; col < num_cols; col++) {
                   var edges = [];
-                  if (hbars_by_col[col][row]) {
+                  if (row == 0 || !connection_below[row - 1][col]) {
                     edges.push("t");
                   }
-                  if (hbars_by_col[col][row + 1]) {
+                  if (row == num_rows - 1 || !connection_below[row][col]) {
                     edges.push("b");
                   }
-                  if (vbars_by_row[row][col]) {
+                  if (col == 0 || !connection_to_right[row][col - 1]) {
                     edges.push("l");
                   }
-                  if (vbars_by_row[row][col + 1]) {
+                  if (col == num_cols - 1 || !connection_to_right[row][col]) {
                     edges.push("r");
                   }
-                  maze_row.append("<div class='cell s"+cell_width+" "+edges.join(" ")+"' id='r"+row+"c"+col+"'>"+set_by_cell[row][col]+"</div>");
+                  maze_row.append("<div class='cell s"+cell_width+" "+edges.join(" ")+"' id='r"+row+"c"+col+"'>"+(DEBUG.maze ? set_by_cell[row][col] : "")+"</div>");
                 }
                 maze.append(maze_row);
               }
