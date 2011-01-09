@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=800" />
+    <title>Maze race (choose your maze generation algorithm)</title>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.4.4/jquery.min.js"></script>
+    <script type="text/javascript">
+      var maze_race = function() {
+        var P_HORIZ = 1/2; // Probability of joining two horizontally-adjacent cells
+        var P_VERT = 2/3; // Probability of joining two vertically-adjacent cells
+        var TOTAL_SECONDS = 60 * 5;
+        
+        var DEBUG = {
+          "maze": false,
+          "interaction": false,
+          "flow": false
+        };
+        
+        var num_cols = 5;
+        var num_rows = 5;
+        var cell_width = 100;
+        var cell_height = 100;
+        var num_completed = 0;
+        var interval_timer;
+        var start_time;
+        
+        var log = function(logging_type) {
+          if (DEBUG[logging_type] && typeof console == "object") {
+            console.log.apply(console, [].slice.call(arguments, 1));
+          }
+        };
+        
+        var make_2d_array = function(x_len, y_len, val) {
+          var x, y;
+          var row_array = new Array(y_len);
+          for (y = 0; y < y_len; y++) {
+            row_array[y] = val;
+          }
+          var ret = new Array(x_len);
+          for (x = 0; x < x_len; x++) {
+            ret[x] = $.merge([], row_array);
+          }
+          return ret;
+        };
+        
+        var keys = function(object) {
+          var ret = [];
+          for (var key in object) {
+            ret.push(key);
+          }
+          return ret;
+        };
+        
+        var maze_maker = function() {
+          var set_by_cell;
+          var connection_below;
+          var connection_to_right;
+          
+          return {
+            /* Eller's algorithm */
+            "eller": function() {
+              log("flow", "generating maze");
+              var row, col;
+            
+              connection_below = make_2d_array(num_rows - 1, num_cols, false);
+              connection_to_right = make_2d_array(num_rows, num_cols - 1, false);
+              set_by_cell = make_2d_array(num_rows, num_cols, "");
+            
+              var set_by_col = {};
+              var cols_by_set = {};
+              for (col = 0; col < num_cols; col++) {
+                set_by_col[col] = col;
+                cols_by_set[col] = [col];
+              }
+              var next_set_index = num_cols;
+            
+              for (row = 0; row < num_rows; row++) {
+              
+                if (row > 0) {
+                  $.each(keys(cols_by_set), function(i, set) {
+                    var cols = cols_by_set[set];
+                    var num_to_join = P_VERT * cols.length;
+                    if (num_to_join < 1) {
+                      num_to_join = 1; // At least one cell in each set must be joined
+                    }
+                    log("maze", "[row %d, set %s = [%s]]", row, set, cols.join(", "));
+                    var size_of_set = cols.length;
+                    $.each($.merge([], cols), function(j, col) {
+                      log("maze", "  %d remaining; must join %d", size_of_set - j, num_to_join);
+                      if (Math.random() * (size_of_set - j) <= num_to_join) {
+                        // Join (row-1, col) with (row, col)
+                      
+                        log("maze", "[row %d, set %s] Joining col %d for [%s]", row, set, col, cols.join(", "));
+                        num_to_join--;
+                        connection_below[row - 1][col] = true;
+                      } else {
+                        cols.splice($.inArray(col, cols), 1);
+                        cols_by_set[next_set_index] = [col];
+                        set_by_col[col] = next_set_index;
+                        next_set_index++;
+                      }
+                    });
+                  });
+                }
+              
+                for (col = 0; col < num_cols; col++) {
+                  if (col + 1 < num_cols && set_by_col[col] != set_by_col[col+1]) {
+                    // Consider joining the two cells (row, col) and (row, col + 1)
+                    if (row == num_rows - 1 || Math.random() < P_HORIZ) {
+                      // Join them
+                      connection_to_right[row][col] = true;
+                      var set_1 = set_by_col[col];
+                      var set_2 = set_by_col[col + 1];
+                      $.each(cols_by_set[set_2], function(i, col) {
+                        set_by_col[col] = set_1;
+                      });
+                      $.merge(cols_by_set[set_1], cols_by_set[set_2]);
+                      delete cols_by_set[set_2];
+                    }
+                  }
+                }
+              
+                if (DEBUG.maze) {
+                  for (col = 0; col < num_cols; col++) {
+                    set_by_cell[row][col] = set_by_col[col];
+                  }
+                }
+              
+              }
+            },
+            
+            /* Kruskal's algorithm */
+            "kruskal": function() {
+              log("flow", "generating maze with Kruskal's algoritm");
+              var row, col;
+              
+              connection_below = make_2d_array(num_rows - 1, num_cols, false);
+              connection_to_right = make_2d_array(num_rows, num_cols - 1, false);
+              
+              set_by_cell = [];
+              var cells_by_set = {};
+              for (var i = 0; i < num_rows; i++) {
+                var a = [];
+                for (var j = 0; j < num_cols; j++) {
+                  a.push(i * num_rows + j);
+                  cells_by_set[i * num_rows + j] = [[i, j]];
+                }
+                set_by_cell.push(a);
+              }
+              
+              var number_of_sets = num_rows * num_cols;
+              
+              var combine_sets = function(set_1, set_2) {
+                if (set_1 == set_2) {
+                  return false;
+                }
+                for (i = 0; i < cells_by_set[set_2].length; i++) {
+                  var c = cells_by_set[set_2][i];
+                  set_by_cell[c[0]][c[1]] = set_1;
+                }
+                $.merge(cells_by_set[set_1], cells_by_set[set_2]);
+                number_of_sets--;
+                return true;
+              };
+              
+              while (number_of_sets > 1) {
+                var selected_c, selected_r, set_1, set_2;
+                if (Math.random() > 1/2) {
+                  selected_r = Math.floor(Math.random() * (num_rows - 1));
+                  selected_c = Math.floor(Math.random() * num_cols);
+                  if (combine_sets(set_by_cell[selected_r][selected_c], set_by_cell[selected_r + 1][selected_c])) {
+                    connection_below[selected_r][selected_c] = true;
+                  }
+                }
+                else {
+                  selected_r = Math.floor(Math.random() * num_rows);
+                  selected_c = Math.floor(Math.random() * (num_cols - 1));
+                  if (combine_sets(set_by_cell[selected_r][selected_c], set_by_cell[selected_r][selected_c + 1])) {
+                    connection_to_right[selected_r][selected_c] = true;
+                  }
+                }
+              }
+            },
+            
+            /* Recursive backtracking */
+            "backtrack": function() {
+              connection_below = make_2d_array(num_rows - 1, num_cols, false);
+              connection_to_right = make_2d_array(num_rows, num_cols - 1, false);
+              
+              var done = make_2d_array(num_rows, num_cols, false);
+              
+              var N = 0, W = 1, S = 2, E = 3;
+              var POSSIBILITIES = {
+                0: [ [1,2,3], [1,3,2], [2,1,3], [2,3,1], [3,1,2], [3,2,1] ],
+                1: [ [0,2,3], [0,3,2], [2,0,3], [2,3,0], [3,0,2], [3,2,0] ],
+                2: [ [0,1,3], [0,3,1], [1,0,3], [1,3,0], [3,0,1], [3,1,0] ],
+                3: [ [0,1,2], [0,2,1], [1,0,2], [1,2,0], [2,0,1], [2,1,0] ]
+              };
+              var row_move = function(row, dir) {
+                var new_row = row + ((dir % 2) ? 0 : dir - 1);
+                if (new_row < 0) return 0;
+                if (new_row > num_rows - 1) return (num_rows - 1);
+                return new_row;
+              };
+              var col_move = function(col, dir) {
+                var new_col = col + ((dir % 2) ? dir - 2 : 0);
+                if (new_col < 0) return 0;
+                if (new_col > num_cols - 1) return (num_cols - 1);
+                return new_col;
+              };
+              
+              var tunnel_from = function(row, col, entry_direction) {
+                done[row][col] = true;
+                var directions = POSSIBILITIES[entry_direction][Math.floor(Math.random() * 6)];
+                for (var i = 0; i < directions.length; i++) {
+                  var direction = directions[i];
+                  var new_row = row_move(row, direction);
+                  var new_col = col_move(col, direction);
+                  
+                  if (row == new_row && col == new_col) continue;
+                  if (done[new_row][new_col]) continue;
+                  
+                  if (row == new_row) {
+                    connection_to_right[row][Math.min(col, new_col)] = true;
+                  }
+                  else {
+                    connection_below[Math.min(row, new_row)][col] = true;
+                  }
+                  tunnel_from(new_row, new_col, direction);
+                }
+              };
+              
+              tunnel_from(Math.ceil(num_rows / 2), 0, W);
+            },
+            
+            /* Render the maze to a container element */
+            "render": function(maze) {
+              log("flow", "rendering maze");
+              var row, col;
+              maze.html("");
+              for (row = 0; row < num_rows; row++) {
+                var maze_row = $("<div class='row'></div>");
+                 for (col = 0; col < num_cols; col++) {
+                  var edges = [];
+                  if (row == 0 || !connection_below[row - 1][col]) {
+                    edges.push("t");
+                  }
+                  if (row == num_rows - 1 || !connection_below[row][col]) {
+                    edges.push("b");
+                  }
+                  if (col == 0 || !connection_to_right[row][col - 1]) {
+                    edges.push("l");
+                  }
+                  if (col == num_cols - 1 || !connection_to_right[row][col]) {
+                    edges.push("r");
+                  }
+                  maze_row.append("<div class='cell s"+cell_width+" "+edges.join(" ")+"' id='r"+row+"c"+col+"'>"+(DEBUG.maze ? set_by_cell[row][col] : "")+"</div>");
+                }
+                maze.append(maze_row);
+              }
+              maze.find("#r" + (num_rows - 1) + "c" + (num_cols - 1)).addClass("exit");
+            }
+          };
+        }();
+        
+        var finito = false;
+        var next_maze = function() {
+          log("flow", "next maze");
+          if (finito) return;
+          var cell_size;
+          if (num_completed < 5) {
+            cell_size = 100;
+          }
+          else if (num_completed < 10) {
+            cell_size = 50;
+          }
+          else if (num_completed < 15) {
+            cell_size = 25;
+          }
+          else {
+            cell_size = 20;
+          }
+          cell_width = cell_height = cell_size;
+          num_rows = num_cols = 500 / cell_size;
+          $("#num-completed").text(++num_completed);
+          
+          maze_maker[$("#algorithm").val()]();
+          $("#maze-container").append("<div id='new-maze'></div>");
+          maze_maker.render($("#new-maze"));
+          setTimeout(function() {
+            $("#maze-container").removeClass("instant").addClass("flipped");
+          }, 0);
+          setTimeout(function() {
+            if (finito) return;
+            $("#maze").remove();
+            $("#new-maze").attr("id", "maze");
+            $("#maze-container").addClass("instant").removeClass("flipped");
+            start_interact($("#maze"));
+          }, 1000);
+        };
+        
+        var time_out = function() {
+          finito = true;
+          setTimeout(function() {
+            $("#maze, #new-maze").remove();
+          }, 1000);
+          $("#time-out").show();
+          setTimeout(function() {
+            $("#maze-container").removeClass("instant").addClass("flipped");
+          }, 0);
+        };
+          
+        var start_interact = function(maze) {
+          var done = false;
+          var row = 0;
+          var col = 0;
+          var path = [ [row, col] ];
+          var occupied_cells = {};
+          occupied_cells[row + "," + col] = 0;
+          
+          maze.append(
+            $("<div class='initial horizontal path-segment'></div>")
+            .css({
+              "left": "-2px",
+              "top": (cell_height / 2 - 2) + "px",
+              "width": (cell_width / 2 + 2) + "px"
+            })
+          );
+          
+          var add_segment_event_handlers = function(segment, r, c) {
+            var cell = $("#r" + r + "c" + r);
+            segment.bind("mousedown", function() {
+              cell.trigger("mousedown");
+            });
+            segment.bind("touchstart", function(ev) {
+              ev.originalEvent.preventDefault();
+            });
+          };
+          
+          var vertical_segment = function(row, col, len) {
+            if (typeof len === "undefined") {
+              len = 1;
+            }
+            var segment = $("<div class='vertical path-segment'></div>");
+            segment.css({
+              "left": (col + 1/2) * cell_width - 2,
+              "top": (row + 1/2) * cell_height - 1,
+              "height": len * cell_height + 2
+            });
+            add_segment_event_handlers(segment, row, col);
+            return segment;
+          };
+          
+          var horizontal_segment = function(row, col, len) {
+            if (typeof len === "undefined") {
+              len = 1;
+            }
+            var segment = $("<div class='horizontal path-segment'></div>");
+            segment.css({
+              "left": (col + 1/2) * cell_width - 1,
+              "top": (row + 1/2) * cell_height - 2,
+              "width": len * cell_width + 2
+            });
+            add_segment_event_handlers(segment, row, col);
+            return segment;
+          };
+          
+          var path_pop = function() {
+            if (path.length > 1) {
+              delete occupied_cells[path[path.length - 1].join(",")];
+              path.pop();
+              $(".path-segment:last").remove();
+            }
+          };
+          
+          var append_or_backtrack = function(f, r, c) {
+            if (typeof start_time == "undefined") {
+              // Start the counter, if it hasn't already started
+              start_time = new Date();
+            }
+            if (path.length > 1
+                && row == path[path.length - 2][0]
+                && col == path[path.length - 2][1])
+            {
+              path_pop();
+            }
+            else {
+              occupied_cells[row + "," + col] = path.length;
+              path.push([row, col]);
+              maze.append(f(r, c).attr("id", "p" + (path.length - 1)));
+            }
+          };
+          
+          var win = function() {
+            if (done) {
+              log("flow", "already done in win()");
+              return;
+            }
+            done = true;
+            maze.append(
+              $("<div class='final horizontal path-segment'></div>")
+              .css({
+                "left": ((num_cols - 1/2) * cell_width) + "px",
+                "top":  ((num_rows - 1/2) * cell_height - 2) + "px",
+                "width": (cell_width / 2 + 4) + "px"
+              })
+            );
+            
+            setTimeout(next_maze, 500);
+          };
+          
+          var move = {
+            "left": function() {
+              if (col > 0 && !$("#r"+row+"c"+col).hasClass("l")) {
+                append_or_backtrack(horizontal_segment, row, --col);
+                return true;
+              }
+              return false;
+            },
+            "up": function() {
+              if (row > 0 && !$("#r"+row+"c"+col).hasClass("t")) {
+                append_or_backtrack(vertical_segment, --row, col);
+                return true;
+              }
+              return false;
+            },
+            "right": function() {
+              if (row == num_rows - 1 && col == num_cols - 1) {
+                win();
+              }
+              else if (col + 1 < num_cols && !$("#r"+row+"c"+col).hasClass("r")) {
+                append_or_backtrack(horizontal_segment, row, col++);
+                return true;
+              }
+              return false;
+            },
+            "down": function() {
+              if (row + 1 < num_cols && !$("#r"+row+"c"+col).hasClass("b")) {
+                append_or_backtrack(vertical_segment, row++, col);
+                return true;
+              }
+              return false;
+            }
+          };
+          
+          $(document).unbind("keydown").keydown(function(ev) {
+            switch(ev.keyCode) {
+              case 37: /* left */
+                move.left();
+                return false;
+              case 38: /* up */
+                move.up();
+                return false;
+              case 39: /* right */
+                move.right();
+                return false;
+              case 40: /* down */
+                move.down();
+                return false;
+              case 13:
+                log("interaction", "(%d, %d) [%s]", row, col, path.join("; "));
+              default:
+                log("interaction", "Key press: %d", ev.keyCode);
+                return true;
+            }
+          });
+          
+          var move_to_cell = function(r, c) {
+            var moved = false;
+            if (!moved && typeof occupied_cells[r+","+c] != "undefined") {
+              var number_to_remove = path.length - occupied_cells[r+","+c] - 1;
+              for (var i = 0; i < number_to_remove; i++) {
+                path_pop();
+              }
+              if (number_to_remove > 0) {
+                moved = true;
+                if (path.length) {
+                  row = path[path.length - 1][0];
+                  col = path[path.length - 1][1];
+                }
+                else {
+                  row = 0;
+                  col = 0;
+                }
+              }
+            }
+            else if (r == row && c < col) {
+              while (c < col) {
+                if (move.left()) {
+                  moved = true;
+                } else {
+                  break;
+                }
+              }
+            }
+            else if (r == row && c > col) {
+              while (c > col) {
+                if (move.right()) {
+                  moved = true;
+                } else {
+                  break;
+                }
+              }
+            }
+            else if (c == col && r < row) {
+              while (r < row) {
+                if (move.up()) {
+                  moved = true;
+                } else {
+                  break;
+                }
+              }
+            }
+            else if (c == col && r > row) {
+              while (r > row) {
+                if (move.down()) {
+                  moved = true;
+                } else {
+                  break;
+                }
+              }
+            }
+            if (row == num_rows - 1 && col == num_cols - 1) {
+              win();
+            }
+            return moved;
+          };
+          
+          var mouse_is_down = false;
+          maze
+            .unbind("dragstart").bind("dragstart", function() { return false; })
+            .unbind("mousedown").bind("mousedown", function(ev) {
+              mouse_is_down = true;
+              maze.trigger("mousemove", ev.target.id);
+              return false;
+            })
+            .unbind("mouseup").bind("mouseup", function() {
+              mouse_is_down = false;
+              return false;
+            })
+            .unbind("mousemove").bind("mousemove", function(ev, _cell_id) {
+              if (mouse_is_down) {
+                var cell_id = _cell_id || ev.target.id;
+                if (cell_id) {
+                  var r = parseInt(cell_id.substring(1));
+                  var c = parseInt(cell_id.substring(1 + cell_id.indexOf('c')));
+                  log("interaction", "(%d, %d)", r, c);
+                  move_to_cell(r, c);
+                }
+              }
+              return false;
+            })
+            .unbind("touchstart touchmove").bind("touchstart touchmove", function(ev) {
+              if (ev.originalEvent.touches.length == 1) {
+                ev.originalEvent.preventDefault();
+                var touch = ev.originalEvent.touches[0];
+                var x = touch.pageX - maze.offset().left;
+                var y = touch.pageY - maze.offset().top;
+                var c = Math.floor(x / cell_width);
+                var r = Math.floor(y / cell_height);
+                move_to_cell(r, c);
+                return false;
+              }
+            });
+          
+          if (interval_timer) {
+            clearInterval(interval_timer);
+          }
+          interval_timer = setInterval(function() {
+            if (!start_time) {
+              return;
+            }
+            var elapsed_millis = new Date() - start_time;
+            var elapsed_seconds = Math.floor(elapsed_millis / 1000);
+            var remaining_seconds = TOTAL_SECONDS - elapsed_seconds;
+            if (remaining_seconds < 1) {
+              clearInterval(interval_timer);
+              start_time = null;
+              time_out();
+            }
+            var remaining_minutes = Math.floor(remaining_seconds / 60);
+            var residual_seconds = "" + (remaining_seconds % 60);
+            if (residual_seconds.length < 2) {
+              residual_seconds = "0" + residual_seconds;
+            }
+            if (remaining_seconds <= 0) {
+              remaining_minutes = "0";
+              residual_seconds = "00";
+            }
+            $("#time").text(remaining_minutes + ":" + residual_seconds);
+          }, 500);
+        };
+        
+        /* Kick the whole thing off! */
+        maze_maker[$("#algorithm").val()]();
+        maze_maker.render($("#maze"));
+        start_interact($("#maze"));
+      };
+      
+      $(function() {
+        if (navigator.userAgent.indexOf('iPad') >= 0) {
+          $("#navigation").text("Use your finger to navigate the maze.");
+        }
+        maze_race();
+      });
+    </script>
+    <style type="text/css">
+      /* page-wide style */
+      body { font-family: "Lucida Grande", "Lucida Sans", sans-serif; line-height: 1.5em; background: #444033; color: white; }
+      #container { width: 800px; margin: 1em auto; }
+      a { color: white; }
+      
+      /* the maze itself */
+      #maze-container { position: relative; float: left; width: 502px; height: 502px; }
+      #maze-container #maze { position: absolute; width: 500px; height: 500px; background: #3F576D; border: 1px solid white; }
+      #maze-container #new-maze { display: none; position: absolute;  width: 500px; height: 500px; background: #3F576D; border: 1px solid white; }
+      #maze-container #time-out { display: none; position: absolute; }
+      .row { width: 500px; }
+      .cell { display: inline-block; float: left; position: relative; border: 0px solid #BED6EC; padding: 1px; text-align: center; font-size: 8px; vertical-align: top; }
+      .cell.s100 { width: 98px; height: 98px; line-height: 98px; }
+      .cell.s50 { width: 48px; height: 48px; line-height: 48px; }
+      .cell.s25 { width: 23px; height: 23px; line-height: 23px; }
+      .cell.s20 { width: 18px; height: 18px; line-height: 18px; }
+      .cell.t { border-top-width: 1px; padding-top: 0; }
+      .cell.r { border-right-width: 1px; padding-right: 0; }
+      .cell.b { border-bottom-width: 1px; padding-bottom: 0; }
+      .cell.l { border-left-width: 1px; padding-left: 0;}
+      
+      /* 3D transition effect */
+      @media all and (-webkit-transform-3d) {
+        #container { -webkit-perspective: 500px; }
+        #maze-container #maze,
+        #maze-container #new-maze,
+        #maze-container #time-out { -webkit-transition: 1s; -webkit-transform-style: preserves-3d; }
+        #maze-container #maze { -webkit-transform: rotateY(0deg); }
+        #maze-container #new-maze,
+        #maze-container #time-out { -webkit-transform: rotateY(180deg); }
+        #maze-container #new-maze { display: block; }
+        #maze-container.instant #maze,
+        #maze-container.instant #new-maze,
+        #maze-container.instant #time-out { -webkit-transition: 0; }
+        #maze-container.flipped #maze { -webkit-transform: rotateY(180deg); }
+        #maze-container.flipped #new-maze,
+        #maze-container.flipped #time-out  { -webkit-transform: rotateY(360deg); }
+        #maze,
+        #maze div,
+        #maze-container #new-maze,
+        #maze-container #new-maze div,
+        #maze-container #time-out,
+        #maze-container #time-out * { -webkit-backface-visibility: hidden; }
+      }
+      
+      /* entrance and exit */
+      #r0c0 { border-left-width: 2px; margin-left: -1px; border-left-color: #3F576D; }
+      .cell.exit { margin-right: -1px; border-right-width: 2px; border-right-color: #3F576D; }
+      
+      /* path through the maze */
+      .path-segment { background: red; position: absolute; font-size: 1px; }
+      .horizontal.path-segment { height: 4px; }
+      .vertical.path-segment { width: 4px; }
+      
+      /* Status box */
+      #status { width: 290px; float: right; }
+      #status #timer { width: 250px; border: 3px solid #999; padding: 6px 6px; -webkit-border-radius: 10px 10px; margin: auto; text-align: center; }
+      #status #timer #time { font-size: 48px; line-height: 50px; }
+      #status #completed { width: 250px; margin: auto; text-align: center; margin-top: 50px; }
+      #status #completed #num-completed { font-size: 48px; line-height: 50px; }
+      
+      /* Time out */
+      #time-out { padding: 40px; width: 420px; height: 420px; background: black; border: 2px dotted #900; }
+      #time-out h1 { text-align: center; }
+      
+      /* footer */
+      #footer { font-size: 12px; width: 100%; clear: both; padding-top: 1em; text-align: center; color: #DDD; }
+    </style>
+    <script type="text/javascript">
+
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-20532176-1']);
+      _gaq.push(['_trackPageview']);
+
+      (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+      })();
+
+    </script>
+  </head>
+  <body>
+    <div id="container">
+      <div id="maze-container">
+        <div id="maze"></div>
+        <div id="time-out">
+          <h1>Time out!</h1>
+          <p>Reload the page to play again.</p>
+        </div>
+      </div>
+      <div id="status">
+        <div id="timer">
+          <div>Time remaining</div>
+          <div id="time">5:00</div>
+        </div>
+        <div id="completed">
+          <div>Solved mazes</div>
+          <div id="num-completed">0</div>
+        </div>
+        <div id="settings">
+          <form>
+            <select id="algorithm" name="algorithm">
+              <option value="eller">Eller’s algorithm</option>
+              <option value="kruskal">Kruskal’s algorithm</option>
+              <option value="backtrack">Recursive backtracking</option>
+            </select>
+          </form>
+        </div>
+      </div>
+      <div id="footer">
+        <div id="navigation">Use the arrow keys or mouse to navigate the maze.</div>
+        <div>Mazes are generated using Eller’s algorithm as described <a href="http://weblog.jamisbuck.org/2010/12/29/maze-generation-eller-s-algorithm">here</a>.</div>
+      </div>
+    </div>
+  </body>
+</html>
