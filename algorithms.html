@@ -17,10 +17,10 @@
           "flow": false
         };
         
-        var num_cols = 5;
-        var num_rows = 5;
-        var cell_width = 100;
-        var cell_height = 100;
+        var num_cols = 8;
+        var num_rows = 8;
+        var cell_width = 50;
+        var cell_height = 50;
         var num_completed = 0;
         var interval_timer;
         var start_time;
@@ -612,11 +612,11 @@
       a { color: white; }
       
       /* the maze itself */
-      #maze-container { position: relative; float: left; width: 502px; height: 502px; }
-      #maze-container #maze { position: absolute; width: 500px; height: 500px; background: #3F576D; border: 1px solid white; }
-      #maze-container #new-maze { display: none; position: absolute;  width: 500px; height: 500px; background: #3F576D; border: 1px solid white; }
+      #maze-container { position: relative; float: left; width: 402px; height: 402px; }
+      #maze-container #maze { position: absolute; width: 400px; height: 400px; background: #3F576D; border: 1px solid white; }
+      #maze-container #new-maze { display: none; position: absolute;  width: 400px; height: 400px; background: #3F576D; border: 1px solid white; }
       #maze-container #time-out { display: none; position: absolute; }
-      .row { width: 500px; }
+      .row { width: 400px; }
       .cell { display: inline-block; float: left; position: relative; border: 0px solid #BED6EC; padding: 1px; text-align: center; font-size: 8px; vertical-align: top; }
       .cell.s100 { width: 98px; height: 98px; line-height: 98px; }
       .cell.s50 { width: 48px; height: 48px; line-height: 48px; }
@@ -661,11 +661,11 @@
       .vertical.path-segment { width: 4px; }
       
       /* Status box */
-      #status { width: 290px; float: right; }
-      #status #timer { width: 250px; border: 3px solid #999; padding: 6px 6px; -webkit-border-radius: 10px 10px; margin: auto; text-align: center; }
-      #status #timer #time { font-size: 48px; line-height: 50px; }
-      #status #completed { width: 250px; margin: auto; text-align: center; margin-top: 50px; }
-      #status #completed #num-completed { font-size: 48px; line-height: 50px; }
+      #sidebar { width: 290px; float: right; }
+      #sidebar #timer { width: 250px; border: 3px solid #999; padding: 6px 6px; -webkit-border-radius: 10px 10px; margin: auto; text-align: center; }
+      #sidebar #timer #time { font-size: 48px; line-height: 50px; }
+      #sidebar #completed { width: 250px; margin: auto; text-align: center; margin-top: 50px; }
+      #sidebar #completed #num-completed { font-size: 48px; line-height: 50px; }
       
       /* Time out */
       #time-out { padding: 40px; width: 420px; height: 420px; background: black; border: 2px dotted #900; }
@@ -697,7 +697,7 @@
           <p>Reload the page to play again.</p>
         </div>
       </div>
-      <div id="status">
+      <div id="sidebar">
         <div id="timer">
           <div>Time remaining</div>
           <div id="time">5:00</div>
@@ -708,17 +708,17 @@
         </div>
         <div id="settings">
           <form>
+            Maze generation algorithm:
             <select id="algorithm" name="algorithm">
               <option value="eller">Eller’s algorithm</option>
               <option value="kruskal">Kruskal’s algorithm</option>
-              <option value="backtrack">Recursive backtracking</option>
+              <option value="backtrack" selected>Recursive backtracking</option>
             </select>
           </form>
         </div>
       </div>
       <div id="footer">
         <div id="navigation">Use the arrow keys or mouse to navigate the maze.</div>
-        <div>Mazes are generated using Eller’s algorithm as described <a href="http://weblog.jamisbuck.org/2010/12/29/maze-generation-eller-s-algorithm">here</a>.</div>
       </div>
     </div>
   </body>

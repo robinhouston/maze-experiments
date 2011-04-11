@@ -1,18 +1,24 @@
+.row { clear: both; }
+
 .row .maze {
   padding: 0 0 20px 20px;
   display: inline-block;
+  float: left;
 }
 
 .maze .grid { width: 210px; height: 210px; }
 .maze .grid .row { width: 210px; }
 
+.small .grid .row { height: 42px; }
 .small .grid .row div { width: 40px; height: 40px; }
+.medium .grid .row { height: 14px; }
 .medium .grid .row div { width: 12px; height: 12px; }
+.large .grid .row { height: 7px; }
 .large .grid .row div { width: 5px; height: 5px; }
 
 .maze .grid { border: 1px solid black; }
 
-.maze .grid .row div { display: inline-block; border: 1px solid black; background: #ccc; }
+.maze .grid .row div { display: inline-block; border: 1px solid black;  background: #ccc; float: left; font-size: 1px; line-height: 1px;}
 
 .maze .grid div.in { background: #fff; }
 .maze .grid div.f { background: #faa; }
