@@ -1,4 +1,4 @@
-import cairo, math
+import cairo
 
 C = 20 # cell size
 B = 15 # border size
@@ -9,11 +9,12 @@ GAP_BETWEEN_CELLS = 40
 
 PAGE_SIZE_PTS = 6 * 72
 
+FILL_COLOUR = (.86, .2, .2)
+STROKE_COLOUR = None #(.4, .1, .1)
+
 logical_dimen = MARGIN + 16 * (C+B+C+B+C) + 15 * GAP_BETWEEN_CELLS + MARGIN
 surface = cairo.PDFSurface("all-the-3x3-weave-mazes.pdf", PAGE_SIZE_PTS, PAGE_SIZE_PTS)
 c = cairo.Context(surface)
-scale_factor = math.sqrt( float(PAGE_SIZE_PTS) / logical_dimen )
-c.scale(scale_factor, scale_factor)
 
 def branch(e, matrix=None, bridge_gap=False):
   if matrix is not None:
@@ -157,15 +158,27 @@ def join_branches(*branches):
 
 def draw(path):
   path_iter = iter(path)
+  
+  c.save()
+  scale_factor = float(PAGE_SIZE_PTS) / logical_dimen
+  c.scale(scale_factor, scale_factor)
+
   c.move_to(*path_iter.next())
   for x,y in path_iter:
     c.line_to(x,y)
   c.close_path()
   
-  c.set_source_rgb(.86, .2, .2)
-  c.fill_preserve()
-  # c.set_source_rgb(.4, .1, .1)
-  # c.stroke()
+  if FILL_COLOUR:
+    c.set_source_rgb(*FILL_COLOUR)
+    if STROKE_COLOUR:
+      c.fill_preserve()
+    else:
+      c.fill()
+  if STROKE_COLOUR:
+    c.set_source_rgb(*STROKE_COLOUR)
+    c.stroke()
+  
+  c.restore()
 
 MR = cairo.Matrix(0,1, -1,0, B+C+B+C+B+C+B,0)
 MB = cairo.Matrix(-1,0, 0,-1, B+C+B+C+B+C+B,B+C+B+C+B+C+B)
