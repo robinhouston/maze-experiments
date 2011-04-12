@@ -13,8 +13,6 @@ FILL_COLOUR = (.86, .2, .2)
 STROKE_COLOUR = None #(.4, .1, .1)
 
 logical_dimen = MARGIN + 16 * (C+B+C+B+C) + 15 * GAP_BETWEEN_CELLS + MARGIN
-surface = cairo.PDFSurface("all-the-3x3-weave-mazes.pdf", PAGE_SIZE_PTS, PAGE_SIZE_PTS)
-c = cairo.Context(surface)
 
 def branch(e, matrix=None, bridge_gap=False):
   if matrix is not None:
@@ -283,6 +281,13 @@ def draw_mazes():
         draw_maze(13-i, 15-2*j-k, ((),(1-k,-1-i),(),(1-i,j)))
         draw_branch(13-i, 15-2*j-k, (1-j, k), matrix=None, bridge_gap=True)
 
-draw_mazes()
-c.show_page()
-surface.finish()
+def main():
+  global c
+  surface = cairo.PDFSurface("all-the-3x3-weave-mazes.pdf", PAGE_SIZE_PTS, PAGE_SIZE_PTS)
+  c = cairo.Context(surface)
+  draw_mazes()
+  c.show_page()
+  surface.finish()
+
+if __name__ == "__main__":
+  main()
