@@ -179,13 +179,11 @@ def maze(t, r, b, l):
 def draw_maze(*args, **kwargs):
   return draw(maze(*args, **kwargs))
 
-def draw_branch(cell_row, cell_col, *args, **kwargs):
-  with cell(cell_row, cell_col):
-    b = branch(*args, **kwargs)
-  draw(b)
+def draw_branch(*args, **kwargs):
+  draw(branch(*args, **kwargs))
 
 
-def main(output_filename, spec_strings):
+def main(output_filename, spec_strings, extra_gap_branch):
   global c
   size = B+C+B+C+B+C+B
   surface = cairo.ImageSurface(cairo.FORMAT_RGB24, size, size)
@@ -204,9 +202,12 @@ def main(output_filename, spec_strings):
       spec.append(None)
   
   draw_maze(*spec)
+  if extra_gap_branch:
+    matrix = {"T": None, "R": MR, "B": MB, "L": ML}[extra_gap_branch[0]]
+    draw_branch(map(int, extra_gap_branch[1].split(",")), matrix=matrix, bridge_gap=True)
   surface.write_to_png(output_filename)
   surface.finish()
 
 if __name__ == "__main__":
   import sys
-  main(sys.argv[1], sys.argv[2:])
+  main(sys.argv[1], sys.argv[2:6], sys.argv[6:])
