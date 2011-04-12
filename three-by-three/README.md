@@ -10,19 +10,19 @@ the mazes according to the neighbours of the central cell, as follows.
 
 ## One neighbour
 
-![](README_images/one-neighbour.png)
+![](/robinhouston/maze-experiments/raw/master/three-by-three/README_images/one-neighbour.png)
 
 ## Two adjacent neighbours
 
-![](README_images/two-adjacent-neighbours.png)
+![](/robinhouston/maze-experiments/raw/master/three-by-three/README_images/two-adjacent-neighbours.png)
 
 ## Two opposite neighbours
 
-![](README_images/two-opposite-neighbours.png)
+![](/robinhouston/maze-experiments/raw/master/three-by-three/README_images/two-opposite-neighbours.png)
 
 ## Three neighbours
 
-![](README_images/three-neighbours.png)
+![](/robinhouston/maze-experiments/raw/master/three-by-three/README_images/three-neighbours.png)
 
 This pattern has four possible orientations.
 For each orientation:
@@ -33,7 +33,7 @@ For each orientation:
 
 ## Four neighbours
 
-![](README_images/four-neighbours.png)
+![](/robinhouston/maze-experiments/raw/master/three-by-three/README_images/four-neighbours.png)
 
 Each corner cell can be attached to either one of its two neighbours,
 so there are a total of 2<sup>4</sup> = <b>16 mazes</b> of this type.
