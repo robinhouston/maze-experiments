@@ -1,3 +1,6 @@
+# Make a PDF file containing all the 3x3 weave mazes, on a 16 x 16 grid.
+# The file is output as "all-the-3x3-weave-mazes.pdf".
+
 import cairo
 
 C = 20 # cell size
