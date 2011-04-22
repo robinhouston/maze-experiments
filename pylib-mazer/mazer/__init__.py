@@ -4,11 +4,16 @@ from mazer.maze import (
   UN, UE, US, UW,
   
   RELATIVE_DIRECTIONS,
-  LEFT, AHEAD, RIGHT,
+  LEFT, AHEAD, RIGHT, BACK,
   
   H_OVER_V, V_OVER_H,
   
   Maze,
   
   random_direction
+)
+
+from mazer.render import (
+  UnicodeRenderer,
+  CairoRenderer,
 )

@@ -27,17 +27,21 @@ def random_direction():
 
 class _RelativeDirection(object):
   """Represents a relative direction.
-  There should be precisely three instances: LEFT, AHEAD, and RIGHT.
+  There are four instances: LEFT, AHEAD, RIGHT, and BACK.
   """
-  def __init__(self, f_abs):
+  def __init__(self, name, f_abs):
+    self.name = name
     self.f_abs = f_abs
   def abs(self, direction):
     assert direction in DIRECTIONS
     return self.f_abs(direction)
+  def __str__(self):
+    return self.name
 
-LEFT = _RelativeDirection(lambda d: ANTICLOCKWISE[d])
-AHEAD = _RelativeDirection(lambda d: d)
-RIGHT = _RelativeDirection(lambda d: CLOCKWISE[d])
+LEFT = _RelativeDirection("LEFT", lambda d: ANTICLOCKWISE[d])
+AHEAD = _RelativeDirection("AHEAD", lambda d: d)
+RIGHT = _RelativeDirection("RIGHT", lambda d: CLOCKWISE[d])
+BACK = _RelativeDirection("BACK", lambda d: OPPOSITE[d])
 
 RELATIVE_DIRECTIONS = [LEFT, AHEAD, RIGHT]
 
@@ -110,7 +114,6 @@ class Maze(object):
   
   def cursor_cell(self):
     return (self.cursor_col, self.cursor_row)
-
   
   def move(self, *move_spec):
     if len(move_spec) == 1:
@@ -141,7 +144,7 @@ class Maze(object):
     elif direction in DIRECTIONS:
       return direction
     else:
-      raise ValueError("Bad direction: %r" %direction)
+      raise ValueError("Bad direction: %r" % (direction,))
   
   def turn(self, direction):
     self.cursor_dir = self._abs(direction)
@@ -170,18 +173,21 @@ class Maze(object):
     if len(args) == 1:
       direction, = args
       self.cursor_dir = self._abs(direction)
-      self.cursor_col, self.cursor_row = self._carve(self.cursor_col, self.cursor_row, self.cursor_dir)
+      r = self._carve(self.cursor_col, self.cursor_row, self.cursor_dir)
+      if r:
+        self.cursor_col, self.cursor_row = r
+        return True
+      else:
+        return False
     elif len(args) == 2:
       (sx, sy), (tx, ty) = args
       direction = DELTA_R[(tx-sx, ty-sy)]
-      self._carve(sx, sy, direction)
+      return bool(self._carve(sx, sy, direction))
     elif len(args) == 3:
       x, y, direction = args
-      self._carve(x, y, self._abs(direction))
+      return bool(self._carve(x, y, self._abs(direction)))
     else:
       raise TypeError("carve() takes 1, 2 or 3 arguments (%d given)" % len(args))
-    
-    return self
   
   def _carve(self, x, y, direction, **kwargs):
     if not (0 <= x < self.num_cols and 0 <= y < self.num_rows):
@@ -190,7 +196,7 @@ class Maze(object):
     dx, dy = DELTA[direction]
     tx, ty = x + dx, y + dy
     if not (0 <= tx < self.num_cols and 0 <= ty < self.num_rows):
-      raise ValueError("carve(): position (%d,%d) is out of bounds" % (tx, ty))
+      return ()
     
     self._add(x, y, direction)
     self._add(tx, ty, OPPOSITE[direction])
@@ -199,10 +205,6 @@ class Maze(object):
       self._components[(x,y)].identify_with(self._components[(tx,ty)])
     
     return tx, ty
-  
-  def _carve_m(self, x, y, *directions):
-    for direction in directions:
-      self._carve(x, y, direction)
   
   def carve_path(self, path):
     for i in range(len(path) - 1):
@@ -238,6 +240,13 @@ class Maze(object):
     self.weaves.add((x, y, weave_type))
   
   # Inspection
+  
+  def has_exit(self, direction, under=False):
+    d = self._abs(direction)
+    if under:
+      d = d << 4
+    
+    return self[self.cursor_col][self.cursor_row] & d != 0
   
   def cell_is_empty(self, *args):
     if len(args) == 1:
