@@ -3,6 +3,8 @@
 
 import cairo
 
+RANDOM_ORDER = False # Set to True to position the mazes at random
+
 C = 20 # cell size
 B = 15 # border size
 G = 6  # gap size for bridges
@@ -185,10 +187,19 @@ MR = cairo.Matrix(0,1, -1,0, B+C+B+C+B+C+B,0)
 MB = cairo.Matrix(-1,0, 0,-1, B+C+B+C+B+C+B,B+C+B+C+B+C+B)
 ML = cairo.Matrix(0,-1, 1,0, 0,B+C+B+C+B+C+B)
 
+if RANDOM_ORDER:
+  import random
+  shuffled_cells = [(x,y) for x in range(16) for y in range(16)]
+  random.shuffle(shuffled_cells)
+
 class cell(object):
   def __init__(self, cell_row, cell_col):
-    self.cell_row = cell_row
-    self.cell_col = cell_col
+    if RANDOM_ORDER:
+      self.cell_row, self.cell_col = shuffled_cells[cell_row * 16 + cell_col]
+    else:
+      self.cell_row = cell_row
+      self.cell_col = cell_col
+
   def __enter__(self):
     c.save()
     c.translate(
