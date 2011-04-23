@@ -61,30 +61,47 @@ class CairoRenderer(object):
       self._options["height"] or self._options["cell_height"] * maze.num_rows,
     )
   
-  def _cursor_xy(self, maze, weave_gap=False):
+  def _cursor_xy(self, maze, gap_x=0, gap_y=0):
     from mazer.maze import (N,E,S,W)
     x, y, d = maze.cursor()
     border = self._options["path_border_percent"]
-    gap = self._options["weave_gap_percent"] if weave_gap else 0
+    
     dx, dy = {
-      N: (border, 100 - border),
-      E: (border, border),
-      S: (100 - border, border),
-      W: (100 - border, 100 - border),
+      N: (border - gap_x, 100 - border + gap_y),
+      E: (border - gap_y, border - gap_x),
+      S: (100 - border + gap_x, border - gap_y),
+      W: (100 - border + gap_y, 100 - border + gap_x),
     }[d]
     
     return (x * 100 + dx, y * 100 + dy)
   
   def _paths(self, maze):
     from mazer.maze import (N,E,S,W, UN,UE,US,UW, LEFT,AHEAD,RIGHT,BACK)
+    wg = self._options["weave_gap_percent"]
     
-    d = {}
-    
-    start_cursor = (0, 0, N)
-    maze.move(*start_cursor)
-    
-    def trace_path():
+    def trace_path(start_cursor, other_components, already_seen, under=False):
+      print "trace_path(%s)" % (start_cursor,)
+      
       path = []
+      maze.move(*start_cursor)
+      if under:
+        maze.move(AHEAD)
+        start_cursor = maze.cursor()
+        
+        if maze.underpiece(BACK):
+          if maze.cursor() not in already_seen:
+            other_components.append(maze.cursor())
+          path.append(self._cursor_xy(maze, 0,wg))
+          maze.turn(LEFT)
+          path.append(self._cursor_xy(maze, wg,0))
+          maze.turn(LEFT)
+          already_seen.add(maze.cursor())
+          maze.move(AHEAD)
+          path.append(self._cursor_xy(maze, 0,wg))
+          maze.turn(LEFT)
+          path.append(self._cursor_xy(maze, wg,0))
+          
+          return path
       
       while True:
         if maze.has_exit(AHEAD):
@@ -92,21 +109,37 @@ class CairoRenderer(object):
           path.append(self._cursor_xy(maze))
           maze.turn(LEFT)
         else:
+          if maze.has_exit(AHEAD, under=True):
+            maze.move(AHEAD)
+            path.append(self._cursor_xy(maze, 0,wg))
+            if maze.cursor() not in already_seen:
+              other_components.append(maze.cursor())
+            maze.turn(LEFT)
+            path.append(self._cursor_xy(maze, wg,0))
+            maze.turn(LEFT)
+            already_seen.add(maze.cursor())
+            maze.move(AHEAD)
+            path.append(self._cursor_xy(maze))
+            maze.turn(BACK)
+          
           maze.turn(RIGHT)
           path.append(self._cursor_xy(maze))
         
-        print maze.cursor()
         if maze.cursor() == start_cursor:
           break
       
       return path
     
-    paths = [trace_path()]
-    
+    other_components, already_seen = [], set()
+    paths = [ trace_path( (0, 0, N), other_components, already_seen ) ]
+    while other_components:
+      component = other_components.pop(0)
+      print component, already_seen
+      paths.append(trace_path(component, other_components, already_seen, under=True))
+      
     return paths
   
   def render(self, maze, **options):
-    #print maze.render_as_unicode()
     import cairo
     c = self.context
     
@@ -131,4 +164,3 @@ class CairoRenderer(object):
         c.fill()
     
     c.restore()
-

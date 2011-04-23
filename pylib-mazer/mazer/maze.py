@@ -243,10 +243,21 @@ class Maze(object):
   
   def has_exit(self, direction, under=False):
     d = self._abs(direction)
+    x, y = self.cursor_col, self.cursor_row
+    dx, dy = DELTA[d]
     if under:
-      d = d << 4
-    
-    return self[self.cursor_col][self.cursor_row] & d != 0
+      return self[x][y] & d != 0 \
+         and self[x + dx][y + dy] & (OPPOSITE[d] << 4) != 0
+    else:
+      return self[x][y] & d != 0 \
+         and self[x + dx][y + dy] & OPPOSITE[d] != 0
+  
+  def underpiece(self, direction):
+    d = self._abs(direction)
+    x, y = self.cursor_col, self.cursor_row
+    dx, dy = DELTA[d]
+    return self[x][y] & (d << 4) != 0 \
+       and self[x + dx][y + dy] & (OPPOSITE[d] << 4) != 0
   
   def cell_is_empty(self, *args):
     if len(args) == 1:
