@@ -80,8 +80,6 @@ class CairoRenderer(object):
     wg = self._options["weave_gap_percent"]
     
     def trace_path(start_cursor, other_components, already_seen, under=False):
-      print "trace_path(%s)" % (start_cursor,)
-      
       path = []
       maze.move(*start_cursor)
       if under:
