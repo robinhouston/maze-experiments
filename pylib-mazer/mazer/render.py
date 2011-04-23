@@ -129,7 +129,10 @@ class CairoRenderer(object):
       return path
     
     other_components, already_seen = [], set()
-    paths = [ trace_path( (0, 0, N), other_components, already_seen ) ]
+    paths = [
+      trace_path( (cc[0][0], cc[0][1], N), other_components, already_seen )
+      for cc in maze.connected_components()
+    ]
     while other_components:
       component = other_components.pop(0)
       print component, already_seen
