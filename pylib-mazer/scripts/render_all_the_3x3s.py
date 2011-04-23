@@ -22,7 +22,7 @@ def maze(*arms):
   return m
 
 def render_mazes(renderer):
-  def draw_maze(x, y, arms):
+  def draw_maze(y, x, arms):
     m = maze(*arms)
     renderer.render(m,
       left = PAGE_MARGIN + x * BLOCK_SIZE + BLOCK_MARGIN,
