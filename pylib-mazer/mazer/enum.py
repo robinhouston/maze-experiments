@@ -68,7 +68,7 @@ class MazeEnumerator(object):
       
       index = self.index_by_cc[neighbouring_cc]
       self.laplacian[index,index] -= 1
-      num_without_exit = det(self.laplacian)
+      num_without_exit = int(round(det(self.laplacian)))
       
       # print "There are %d completions without the passage (%d, %d, %d)" % (num_without_exit, x,y,d)
       
