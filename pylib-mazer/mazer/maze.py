@@ -297,6 +297,16 @@ class Maze(object):
       else:
         c[(x, y)].identify_with(c[(x, y-1)])
   
+  def connected_component_by_cell(self):
+    if self._components is None:
+      self._init_components()
+    return self._components
+  
+  def connected_components(self):
+    for cell, component in self.connected_component_by_cell().iteritems():
+      r.setdefault(component, []).append(cell)
+    return r.values()
+  
   def is_connected(self, *args):
     if len(args) == 2:
       c1, c2_or_d = args
