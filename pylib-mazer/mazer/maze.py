@@ -238,6 +238,8 @@ class Maze(object):
     self._add(x-1, y, E, do_not_override=True)
     
     self.weaves.add((x, y, weave_type))
+    
+    return self
   
   # Inspection
   
