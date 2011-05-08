@@ -36,6 +36,7 @@ class CairoRenderer(object):
     self._options = {
       "fill_colour": (.86, .2, .2),
       "stroke_colour": None,
+      "stroke_width": None,
       "left": 0,
       "top": 0,
       "width": None,  # width/height override cell_width/cell_height, if set
@@ -140,6 +141,12 @@ class CairoRenderer(object):
       
     return paths
   
+  def _set_source_colour(self, colour):
+    if len(colour) > 3:
+      self.context.set_source_rgba(*colour)
+    else:
+      self.context.set_source_rgb(*colour)
+    
   def render(self, maze, **options):
     import cairo
     c = self.context
@@ -151,17 +158,24 @@ class CairoRenderer(object):
     ratio_x, ratio_y = 100.0 * maze.num_cols, 100.0 * maze.num_rows
     c.save()
     c.transform(cairo.Matrix(width/ratio_x, 0, 0, height/ratio_y, self._options["left"], self._options["top"]))
+    if self._options["stroke_width"] is not None:
+      c.set_line_width(c.device_to_user_distance(self._options["stroke_width"], 0)[0])
     
     for path in paths:
       c.move_to(*path[0])
       for point in path[1:]:
         c.line_to(*point)
-      c.set_source_rgb(*self._options["fill_colour"])
-      if self._options["stroke_colour"]:
-        c.fill_preserve()
-        c.set_source_rgb(*self._options["stroke_colour"])
-        c.stroke()
+      fill_colour, stroke_colour = map(self._options.get, ("fill_colour", "stroke_colour"))
+      if fill_colour is not None:
+        self._set_source_colour(fill_colour)
+        if stroke_colour is not None:
+          c.fill_preserve()
+          self._set_source_colour(stroke_colour)
+          c.stroke()
+        else:
+          c.fill()
       else:
-        c.fill()
+        self._set_source_colour(stroke_colour)
+        c.stroke()
     
     c.restore()
