@@ -305,6 +305,7 @@ class Maze(object):
     return self._components
   
   def connected_components(self):
+    r = {}
     for cell, component in self.connected_component_by_cell().iteritems():
       r.setdefault(component, []).append(cell)
     return r.values()
