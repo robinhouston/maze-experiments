@@ -371,7 +371,7 @@ class Maze(object):
   def __str__(self):
     return self.render_as_unicode().encode("utf-8")
   
-  def render_to_png(self, filename, width, height, background_colour=(1,1,1), **options):
+  def render_to_png(self, filename, width, height, background_colour=(1,1,1), margin=5, **options):
     import cairo, mazer.render
     surface = cairo.ImageSurface(cairo.FORMAT_RGB24, width, height)
     c = cairo.Context(surface)
@@ -381,7 +381,13 @@ class Maze(object):
     c.set_source_rgb(*background_colour)
     c.fill()
     
-    mazer.render.CairoRenderer(c, width=width, height=height, **options).render(self)
+    mazer.render.CairoRenderer(c,
+      width=width-2*margin,
+      height=height-2*margin,
+      left=margin,
+      top=margin,
+      **options
+    ).render(self)
     
     surface.write_to_png(filename)
     surface.finish()
