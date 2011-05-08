@@ -54,8 +54,8 @@ def n_mazes(width, height):
 def zero(n):
   return [ [0] * (i+1) for i in range(n) ]
 
-def ident(n):
-  return [ [0] * i + [1] for i in range(n) ]
+def ident(n, scalar=1):
+  return [ [0] * i + [scalar] for i in range(n) ]
 
 def mobki(n, k):
   """Minus-one-bordered k-times-identity.
@@ -115,3 +115,21 @@ def dmf(m, k):
 
 def n_mazes_(width, height):
   return det( dmf(mobki(width-1, 4), height) )
+
+
+
+def bareiss_seq(m):
+  """Perform the Bareiss algorithm on the matrix,
+  and return the sequence of partial results.
+  """
+  import copy
+  seq = []
+  n = len(m)
+  for k in range(n-1):
+    seq.append(copy.deepcopy(m))
+    for i in range(k+1, n):
+      for j in range(k+1, i+1):
+        m[i][j] = m[i][j] * m[k][k] - m[i][k] * m[j][k]
+        if k > 0:
+          m[i][j] /= m[k-1][k-1]
+  return seq, m
