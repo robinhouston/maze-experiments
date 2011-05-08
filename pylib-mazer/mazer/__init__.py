@@ -17,3 +17,10 @@ from mazer.render import (
   UnicodeRenderer,
   CairoRenderer,
 )
+
+from mazer.generate import (
+  recursive_backtracking,
+  kruskal,
+  aldous_broder,
+  wilson,
+)

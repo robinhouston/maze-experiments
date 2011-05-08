@@ -1,4 +1,8 @@
-from mazer import (Maze, DIRECTIONS, RELATIVE_DIRECTIONS, N, E, S, W, random_direction)
+"""
+Maze generation algorithms.
+"""
+
+from mazer.maze import (Maze, DIRECTIONS, RELATIVE_DIRECTIONS, N, E, S, W, random_direction)
 import random
 
 def recursive_backtracking(maze):
@@ -35,7 +39,7 @@ def aldous_broder(maze):
       maze.move(d)
   return maze
 
-def lerw(maze, c, stopping_set):
+def _lerw(maze, c, stopping_set):
   """Perform a loop-erased random walk from starting position c
   until an element of stopping_set is hit.
   """
@@ -64,15 +68,7 @@ def wilson(maze):
   cells_in_maze = set([(0,0)])
   for c in maze.cells():
     if c not in cells_in_maze:
-      path = lerw(maze, c, cells_in_maze)
+      path = _lerw(maze, c, cells_in_maze)
       maze.carve_path(path)
       cells_in_maze.update(path)
   return maze
-
-
-def main():
-  maze = recursive_backtracking( Maze(10, 10, cursor=(0,2,E)) )
-  print maze.render_as_unicode().encode("utf-8")
-
-if __name__ == "__main__":
-  main()
