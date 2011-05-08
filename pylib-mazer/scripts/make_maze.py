@@ -4,7 +4,7 @@ import random
 def recursive_backtracking(maze):
   """Complete the maze using the recursive backtracking algorithm.
   """
-  directions = RELATIVE_DIRECTIONS
+  directions = [ d for d in RELATIVE_DIRECTIONS ]
   random.shuffle(directions)
   for d in maze.branch(directions):
     if maze.cell_is_empty(d):
