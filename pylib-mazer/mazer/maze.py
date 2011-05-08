@@ -371,7 +371,13 @@ class Maze(object):
   def __str__(self):
     return self.render_as_unicode().encode("utf-8")
   
-  def render_to_png(self, filename, width, height, background_colour=(1,1,1), margin=5, **options):
+  def render_to_png(
+    self, filename, width, height,
+    background_colour=(1,1,1),
+    margin=5,
+    draw_entrance_and_exit=True,
+    **options
+  ):
     import cairo, mazer.render
     surface = cairo.ImageSurface(cairo.FORMAT_RGB24, width, height)
     c = cairo.Context(surface)
@@ -388,6 +394,20 @@ class Maze(object):
       top=margin,
       **options
     ).render(self)
+    
+    if draw_entrance_and_exit:
+      stroke_width = options.get("stroke_width", 0)
+      c.set_source_rgb(1,1,1)
+      h = (height - 2*margin) / self.num_rows - stroke_width
+      m = margin + stroke_width/2
+    
+      # Draw entrance at top-left
+      c.rectangle(0, m, margin + 2 * stroke_width, h)
+      c.fill()
+    
+      # Draw exit at bottom-right
+      c.rectangle(width - margin - stroke_width, height - h - m, 2 * stroke_width, h)
+      c.fill()
     
     surface.write_to_png(filename)
     surface.finish()
