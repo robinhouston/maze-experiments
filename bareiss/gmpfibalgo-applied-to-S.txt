@@ -1,0 +1,42 @@
+The GMP algorithm for Fibonacci uses:
+
+F[2k+1] = 4*F[k]^2 - F[k-1]^2 + 2*(-1)^k
+
+compare with matrix squaring, which gives:
+
+F[2k+1] = F[k]^2 + F[k+1]^2
+        = F[k]^2 + (F[k-1] + F[k])^2
+        = 2*F[k]^2 + F[k-1]^2 + 2*F[k-1]*F[k]
+
+these are equal iff:
+
+    0 = 2*F[k]^2 - 2*F[k-1]^2 + 2*(-1)^k - 2*F[k-1]*F[k]
+<=> F[k]^2 + (-1)^k = F[k-1]^2 + F[k-1]*F[k]
+                    = F[k-1] * (F[k-1] + F[k])
+                    = F[k-1] * F[k+1]
+
+which is true, by taking determinants.
+
+
+
+Taking determinants for S (= 1,x,x^2-1, ...) tells us that:
+
+   S[k]^2 - 1 = S[k-1] * S[k+1]
+=> S[k]^2 - 1 = S[k-1] * (xS[k] - S[k-1])
+=> S[k]^2 + S[k-1]^2 = xS[k-1]S[k] + 1
+=> xS[k-1]S[k] = S[k]^2 + S[k-1]^2 - 1
+
+(because the determinant of ((0 1) (-1 x)) is 1)
+
+plus we already know:
+
+S[2k+1] = S[k+1]^2 - S[k]^2
+        = (x*S[k] - S[k-1])^2 - S[k]^2
+        = (x^2 - 1)S[k]^2 + S[k-1]^2 - 2*x*S[k-1]*S[k]
+
+(thus)  = (x^2 - 3)S[k]^2 - S[k-1]^2 + 2
+
+and:
+
+S[2k-1] = S[k]^2 - S[k-1]^2
+S[2k] = (S[2k-1] + S[2k+1])/x
