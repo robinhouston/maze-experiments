@@ -133,3 +133,12 @@ def bareiss_seq(m):
         if k > 0:
           m[i][j] /= m[k-1][k-1]
   return seq, m
+
+
+def diagonals(m):
+  """Convert the matrix representation to an array of diagonals.
+  """
+  return [
+    [ row[-i-1] for row in m[i:] ]
+    for i in range(len(m))
+  ]
