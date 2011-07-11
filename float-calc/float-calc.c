@@ -18,7 +18,7 @@ void fib_float(mpf_t *result, long n)
 	mp_bitcnt_t bitcnt;
 
     /* We need about n lg(phi) bits of precision */
-	bitcnt = n * 10 / 7;
+	bitcnt = n * 7 / 10;
 
 	/* Initialise sqrt5 to the square root of 5 */
 	mpf_init2(sqrt5, bitcnt);
@@ -70,6 +70,8 @@ int main(int argc, char **argv)
 		return EX_USAGE;
 	}
 
+	printf("Computing fib(%ld) in two different ways.\n", n);
+
 	t1 = clock();
 	mpz_init(int_result);
 	mpz_fib_ui(int_result, n);
@@ -80,7 +82,7 @@ int main(int argc, char **argv)
 	printf("Integer computation took %lu ticks\nFloat computation took %lu ticks\n(at a rate of %d ticks per second)\n\n", t2-t1, t3-t2, CLOCKS_PER_SEC);
 
 	/* Now convert the results of both methods to strings
-	   and make sure they give the same result. */
+	   and make sure they give the same answer. */
 	
 	float_strlen = gmp_asprintf(&float_str, "%.0Ff", float_result);
 	mpf_clear(float_result);
