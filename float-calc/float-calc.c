@@ -41,6 +41,58 @@ void fib_float(mpf_t *result, long n)
 }
 
 /**
+ * Compute the nth Fibonacci number using integer arithmetic.
+ *
+ * This is not as fast as GMP’s built-in mpz_fib_ui routine,
+ * rather it is a direct reimplementation of the fib_fast algorithm
+ * from http://bosker.wordpress.com/2011/04/29/the-worst-algorithm-in-the-world/
+ *
+ * 
+ */
+void fib_int(mpz_t *result, long n)
+{
+	mpz_t a, b, c;
+	long bit, mask;
+
+	/* Set 'bit' to the most-significant 1-bit of 'n' */
+	bit = 1; mask = 1;
+	while (n > mask) {
+		bit = bit << 1;
+		mask = (mask << 1) | 1;
+	}
+
+	mpz_init_set_ui(a, 1);
+	mpz_init_set_ui(b, 0);
+	mpz_init_set_ui(c, 1);
+
+	while (bit > 0) {
+		if ( (n & bit) != 0 ) {
+			/*  a, b = (a + c) * b, (b * b) + (c * c)  */
+			mpz_add(a, a, c);
+			mpz_mul(a, a, b);
+
+			mpz_mul(b, b, b);
+			mpz_addmul(b, c, c);
+		}
+		else {
+			/*  a, b = (a * a) + (b * b), b * (c + a)  */
+			mpz_add(c, c, a); /* Temporarily set c := c + a */
+
+			mpz_mul(a, a, a);
+			mpz_addmul(a, b, b);
+
+			mpz_mul(b, b, c);
+		}
+
+		mpz_add(c, a, b);
+		bit >>= 1;
+	}
+
+	mpz_init_set(*result, b);
+	mpz_clear(a); mpz_clear(b); mpz_clear(c);
+}
+
+/**
  * Compute the nth Fibonacci number using both the floating-point
  * method and the integer algorithm, and print the relative timings.
  *
@@ -73,8 +125,7 @@ int main(int argc, char **argv)
 	printf("Computing fib(%ld) in two different ways.\n", n);
 
 	t1 = clock();
-	mpz_init(int_result);
-	mpz_fib_ui(int_result, n);
+	fib_int(&int_result, n);
 	t2 = clock();
 	fib_float(&float_result, n);
 	t3 = clock();
