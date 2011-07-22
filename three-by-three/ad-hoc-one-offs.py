@@ -2,9 +2,12 @@
 
 import cairo
 
-C = 20 # cell size
-B = 15 # border size
-G = 6  # gap size for bridges
+# C = 20 # cell size
+# B = 15 # border size
+# G = 6  # gap size for bridges
+C = 10 # cell size
+B = 7 # border size
+G = 3  # gap size for bridges
 
 GAP_BETWEEN_CELLS = 40
 
