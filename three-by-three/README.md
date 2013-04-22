@@ -10,31 +10,31 @@ the mazes according to the neighbours of the central cell, as follows.
 
 ## One neighbour
 
-![](/robinhouston/maze-experiments/raw/master/three-by-three/README_images/one-neighbour.png)
+![](https://github.com/robinhouston/maze-experiments/raw/master/three-by-three/README_images/one-neighbour.png)
 
 There are eight of these, in each of four orientations, for a total of <b>32 mazes</b> of this type.
 
 ## Two adjacent neighbours
 
-![](/robinhouston/maze-experiments/raw/master/three-by-three/README_images/two-adjacent-neighbours.png)
+![](https://github.com/robinhouston/maze-experiments/raw/master/three-by-three/README_images/two-adjacent-neighbours.png)
 
 There are 2 × 6 = 12 of these, in each of four orientations, for a total of <b>48 mazes</b> of this type.
 
 ## Two opposite neighbours
 
-![](/robinhouston/maze-experiments/raw/master/three-by-three/README_images/two-opposite-neighbours.png)
+![](https://github.com/robinhouston/maze-experiments/raw/master/three-by-three/README_images/two-opposite-neighbours.png)
 
 There are 4 × 4 = 16 of these, in each of two orientations, for a total of <b>32 mazes</b> of this type.
 
 ## Three neighbours
 
-![](/robinhouston/maze-experiments/raw/master/three-by-three/README_images/three-neighbours.png)
+![](https://github.com/robinhouston/maze-experiments/raw/master/three-by-three/README_images/three-neighbours.png)
 
 There are 2 × 2 × 4 = 16 of these, in each of four orientations, for a total of <b>64 mazes</b> of this type.
 
 ## Four neighbours
 
-![](/robinhouston/maze-experiments/raw/master/three-by-three/README_images/four-neighbours.png)
+![](https://github.com/robinhouston/maze-experiments/raw/master/three-by-three/README_images/four-neighbours.png)
 
 Each corner cell can be attached to either one of its two neighbours,
 so there are a total of 2<sup>4</sup> = <b>16 mazes</b> of this type.
@@ -45,8 +45,8 @@ There is only one possible location for a weave in a 3×3 maze: in the middle. T
 the weave must meet at one of the four corners. So there are two possibilities for the weave, up
 to rotational symmetry:
 
-![](/robinhouston/maze-experiments/raw/master/three-by-three/README_images/weave-v.png)
-![](/robinhouston/maze-experiments/raw/master/three-by-three/README_images/weave-h.png)
+![](https://github.com/robinhouston/maze-experiments/raw/master/three-by-three/README_images/weave-v.png)
+![](https://github.com/robinhouston/maze-experiments/raw/master/three-by-three/README_images/weave-h.png)
 
 Each of the three remaining corner cells can be attached to either one of its two neighbours,
 so there are 2 × 2<sup>3</sup> = 16 woven mazes, in each of four orientations,
