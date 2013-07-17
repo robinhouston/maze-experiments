@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<title>Maze flood fill</title>
+<style>
+    canvas { display: block; margin: auto; border: 1px solid #999; }
+</style>
+<canvas width="800" height="500"></canvas>
+<script>
+    var PIXELS_PER_FRAME = 200;
+    
+    var canvas = document.getElementsByTagName("canvas")[0];
+    var cx = canvas.getContext("2d");
+    
+    function loadAndFill(image_url, finished) {
+        var image = new Image();
+        image.addEventListener("load", function() {
+            cx.drawImage(image, (canvas.width - image.width)/2, (canvas.height - image.height)/2);
+            floodFill(finished);
+        });
+        image.src = image_url;
+    }
+    
+    function floodFill(finished) {
+        var image_data_object = cx.getImageData(0, 0, canvas.width, canvas.height),
+            image_data = image_data_object.data;
+    
+        function white(x, y) {
+            var base_index = (canvas.width * y + x) * 4,
+                r = image_data[base_index],
+                g = image_data[base_index + 1],
+                b = image_data[base_index + 2],
+                a = image_data[base_index + 3];
+            return (r == 0xFF && g == 0xFF && b == 0xFF);
+        }
+        function redden(x, y) {
+            var base_index = (canvas.width * y + x) * 4;
+            image_data[base_index] = 0xFF;
+            image_data[base_index + 1] = 0x00;
+            image_data[base_index + 2] = 0x00;
+            image_data[base_index + 3] = 0xFF;
+        }
+    
+        var x, y;
+        do {
+            x = Math.floor(Math.random() * canvas.width);
+            y = Math.floor(Math.random() * canvas.height);
+        } while (!white(x, y));
+    
+        var queue = [[x,y]];
+        function doFill() {
+            var num_reddened = 0;
+            queue_loop: while (queue.length > 0) {
+                var p = queue.shift(), x = p[0], y = p[1];
+                if (!white(x, y)) continue;
+        
+                while (x > 0 && white(x-1, y)) x--;
+                while (x < canvas.width && white(x, y)) {
+                    redden(x, y);
+                    if (y > 0 && white(x, y-1)) queue.push([x, y-1]);
+                    if (y < canvas.height-1 && white(x, y+1)) queue.push([x, y+1]);
+                    x++;
+                    
+                    if (++num_reddened == PIXELS_PER_FRAME) {
+                        queue.unshift([x, y]);
+                        break queue_loop;
+                    }
+                }
+            }
+            cx.putImageData(image_data_object, 0, 0);
+        }
+    
+        function animate() {
+            doFill();
+            if (queue.length > 0) requestAnimationFrame(animate);
+            else if (finished) finished();
+        }
+        requestAnimationFrame(animate);
+    }
+    
+    // Maze images generated uniformly at random using Wilson’s algorithm, specifically:
+    //   pylib-mazer/scripts/make_png_maze.py -r 164 -c 264 -m 4
+    function randomMazeUrl() {
+        return mazeUrl(Math.floor(Math.random() * 32));
+    }
+    function mazeUrl(index) {
+        if (index < 10) return "maze0" + index + ".png";
+        else return "maze" + index + ".png";
+    }
+    
+    function doIt() {
+        loadAndFill(randomMazeUrl(), doIt);
+    }
+    
+    // Preload all the mazes in the background
+    var images = [];
+    for (var i=0; i < 32; i++) {
+        images[i] = new Image();
+        images[i].src = mazeUrl(i);
+    }
+    
+    // Go!
+    doIt();
+</script>
