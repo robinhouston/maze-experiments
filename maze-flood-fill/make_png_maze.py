@@ -18,13 +18,13 @@ parser.add_option("-o", "--output",
                 help="name of output file")
 
 parser.add_option("", "--column-width",
-                action="store", type="int", default=8,
+                action="store", type="int", default=3,
                 help="width of one column of the maze, in pixels; default is %default")
 parser.add_option("", "--width",
                 action="store", type="int", default=0,
                 help="width of output image (pixels)")
 parser.add_option("", "--row-height",
-                action="store", type="int", default=8,
+                action="store", type="int", default=3,
                 help="height of one row of the maze, in pixels; default is %default")
 parser.add_option("", "--height",
                 action="store", type="int", default=0,
@@ -58,4 +58,4 @@ if not height:
 
 m = mazer.Maze(options.columns, options.rows)
 mazer.generate.wilson(m)
-m.render_to_png(options.output, width, height, margin=options.margin, fill_colour=(0.8, 0.8, 0.8))
+m.render_to_png(options.output, width, height, margin=options.margin, background_colour=(0.7, 0.7, 0.7), fill_colour=(1, 1, 1), path_border_percent=100/3, draw_entrance_and_exit=False)
