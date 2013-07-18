@@ -81,4 +81,4 @@ while len(queue) > 0:
     data_this_frame = im_this_frame.get_data()
 
 # Can make an animated GIF using ImageMagick, e.g.
-#   convert -delay 5 tumblr-maze.png $(seq -f frame%04g.png 1 404) tumblr.gif
+#   convert -delay 5 tumblr-maze.png frame*.png tumblr.gif
